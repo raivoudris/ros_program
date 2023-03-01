@@ -26,15 +26,15 @@ class MyPublisherNode(DTROS):
         self.timeR = 0
         self.pub = rospy.Publisher('bestestduckiebot/wheels_driver_node/wheels_cmd', WheelsCmdStamped, queue_size=10)
         self.tof = rospy.Subscriber('/bestestduckiebot/front_center_tof_driver_node/range', Range, self.callback)
-        self.rwheel = rospy.Subscriber('/bestestduckiebot/right_wheel_encoder_node/tick', WheelEncoderStamped ,self.rightwheel, self.time_rightwheel)
-        self.lwheel = rospy.Subscriber('/bestestduckiebot/left_wheel_encoder_node/tick', WheelEncoderStamped, self.leftwheel, self.time_leftwheel)
+        self.rwheel = rospy.Subscriber('/bestestduckiebot/right_wheel_encoder_node/tick', WheelEncoderStamped ,self.rightwheel)
+        self.lwheel = rospy.Subscriber('/bestestduckiebot/left_wheel_encoder_node/tick', WheelEncoderStamped, self.leftwheel)
         #time_rightwheel ja leftwheel saab äkki tõsta self.rwheel-i alla
         #self.lwheel = rospy.Subscriber('/bestestduckiebot/left_wheel_encoder_node/tick', WheelEncoderStamped, self.leftwheel)
         #self.seqRight = rospy.Subscriber('/bestestduckiebot/right_wheel_encoder_node/tick', WheelEncoderStamped ,self.time_rightwheel)
         #self.seqLeft = rospy.Subscriber('/bestestduckiebot/left_wheel_encoder_node/tick', WheelEncoderStamped, self.time_leftwheel)
 
         self.bus = SMBus(1)
-        
+        #Odomeetrialeftwheel
         self.ticks_left = 0
         self.prev_tick_left = 0
         self.ticks_right = 0
@@ -84,13 +84,15 @@ class MyPublisherNode(DTROS):
     def rightwheel(self, data):
         self.right = data.data
         #rospy.loginfo("Parem ratas: %s", data.data)
+        self.timeR = data.header.seq
     def leftwheel(self, data):
         self.left = data.data
         #rospy.loginfo("Vasak ratas: %s", data.data)
-    def time_leftwheel(self, data):
         self.timeL = data.header.seq
-    def time_rightwheel(self, data):
-        self.timeR = data.header.seq
+    #def time_leftwheel(self, data):
+        
+    #def time_rightwheel(self, data):
+        
     def go_around(self):
         print("Going around!")
         sleep(0.5)
@@ -253,6 +255,11 @@ class MyPublisherNode(DTROS):
         #print("DELTA T : ", self.delta_t)
     
     def PID_calc(self):
+        #Line follower
+        Kp = 0.045
+        Ki = 0.02 
+        Kd = 1.2    #Vähendab ujumist
+
         self.prev_info = self.theta_ref
         #P
         self.position = sum(self.line_values) / len(self.line_values)
@@ -306,10 +313,7 @@ class MyPublisherNode(DTROS):
             #print(self.line_values)
             self.errorlist = list(map(int, self.theta_ref))
             #print("errorlist = ", self.errorlist)
-            #Line follower
-            Kp = 0.045
-            Ki = 0.02 
-            Kd = 1.2    #Vähendab ujumist
+            
 
             #D = (Error - previous error) / delta t
 
