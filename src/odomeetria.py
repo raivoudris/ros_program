@@ -58,8 +58,10 @@ class MyPublisherNode(DTROS):
 
     def run(self):
         # publish message every 1 second
-        rate = rospy.Rate(30) # 1Hz  
+        rate = rospy.Rate(25) # 1Hz  
         while not rospy.is_shutdown():
+
+#-------------------------------------- ODUMEETRIA ----------------------------------------------#
             
             if self.initial < 1 and self.gotPose:
                 self.prev_tick_left = self.left
@@ -95,18 +97,19 @@ class MyPublisherNode(DTROS):
             #Delta T arvutamine
 
 
-            self.delta_t = self.timeL - self.lastCall + 1
-            print("timeL: ", self.timeL)
+            self.delta_t = self.timeL - self.lastCall + 3
+            #print("timeL: ", self.timeL)
 
 
             self.lastCall = self.timeL
-            print("DELTA T : ", self.delta_t)
+            #print("DELTA T : ", self.delta_t)
 
             #Publishin saadud tulemused:
             self.position.position.x = np.rad2deg(self.rotation_wheel_left) #Vasaku ratta pöörlemine kraadides
             self.pub.publish(self.position)
             self.position.position.y = d_left       #Vasaku ratta läbitud vahemaa
             self.position.position.z = self.delta_t
+            #print("deltaT: ", self.delta_t)
             self.pub2.publish(self.position)
 
             self.right_pos.position.x = np.rad2deg(self.rotation_wheel_right) #Parema ratta pöörlemine kraadides
