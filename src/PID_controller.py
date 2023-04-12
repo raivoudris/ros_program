@@ -7,9 +7,13 @@ def PID(position, delta_t):
     PID = 0
     #Joone järgimine
     Kp = 0.04
-    Ki = 0.01     
-    Kd = 0.3    #Vähendab roboti ujumist 
+    Ki = 0.02     
+    Kd = 2    #Vähendab roboti ujumist 
 
+#töötas:
+#0.04
+#0.01
+#0.6
 
     #Mida vaja:
     #delta_t, position
@@ -43,7 +47,7 @@ def PID(position, delta_t):
         Kpe = Kp * error
         Kie = Ki * In_al
         Kde = Kd * err_der
-        print("Kie: ", Kie)
+        #print("Kie: ", Kie)
         #print(round(Kpe, 2), round(Kie, 2), round(Kde, 2))
         PID = Kpe + Kie + Kde
         prev_e = error

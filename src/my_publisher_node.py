@@ -4,7 +4,6 @@
 import rospy
 import numpy as np
 from time import sleep
-import smbus2
 from duckietown.dtros import DTROS, NodeType
 from std_msgs.msg import String
 from smbus2 import SMBus
@@ -14,6 +13,10 @@ from geometry_msgs.msg import Pose
 import PID_controller
 import Line_follower_output
 
+import board
+import adafruit_mpu6050
+
+
 
 #-------------------------------------- KOODI PEAMINE FUNKTSIONAALSUS ----------------------------------------------#
 
@@ -21,12 +24,17 @@ speed = WheelsCmdStamped()
 avoiding = False #Kas robot on mööda sõitmas takistusest
 
 
+
+
 class MyPublisherNode(DTROS): #Klass
 
     def __init__(self, node_name):
         super(MyPublisherNode, self).__init__(node_name=node_name, node_type=NodeType.GENERIC)
+        self.bus = SMBus(1)
+        
 
-        self.start_vel = 0.1  #Roboti algne kiirus
+
+        self.start_vel = 0.2  #Roboti algne kiirus
         self.range = 1
         self.right = 0
         self.left = 0
@@ -44,7 +52,7 @@ class MyPublisherNode(DTROS): #Klass
         self.rwheel = rospy.Subscriber('/bestestduckiebot/right_wheel_encoder_node/tick', WheelEncoderStamped ,self.rightwheel)
         self.lwheel = rospy.Subscriber('/bestestduckiebot/left_wheel_encoder_node/tick', WheelEncoderStamped, self.leftwheel)
 
-        self.bus = SMBus(1)
+        
         self.ticks_left = 0
         self.prev_tick_left = 0
         self.ticks_right = 0
@@ -82,6 +90,8 @@ class MyPublisherNode(DTROS): #Klass
         self.leftvalues = [[1, 1, 1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 0, 0], [1, 1, 1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 0, 0, 0, 0], [1, 1, 1, 0, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0]]
         self.shortroute = [[1, 0, 0, 1, 0, 0, 0, 0], [1, 1, 0, 1, 1, 0, 0, 0], [1, 0, 1, 1, 0, 0, 0, 0], [0, 1, 1, 0, 1, 1, 0, 0]]
         self.turningpoint = [ [0, 0, 1, 1, 1, 1, 0, 0], [0, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 1, 1, 1, 1, 0]]
+
+
         
         #Roboti sulgemis errori eemaldamine
     def on_shutdown(self):
@@ -257,16 +267,17 @@ class MyPublisherNode(DTROS): #Klass
         while self.errorlist[0] == 1 or self.errorlist[1] == 1 or self.errorlist[2] == 1 and self.errorlist[5] == 0:
             
             self.errorlist = list(map(int, self.theta_ref))
+            if self.errorlist[2] == 1 and self.errorlist[5] == 1:
+                while self.errorlist[0] == 1 or self.errorlist[1] == 1 or self.errorlist[2] == 1:
+
                 
-            speed.vel_right = 0.2
-            speed.vel_left = 0.0
-            self.pub.publish(speed)
+                    speed.vel_right = 0.2
+                    speed.vel_left = 0.0
+                    self.pub.publish(speed)
         self.short = 0
 
 
 #-------------------------------------- RUN FUNKTSIOON ----------------------------------------------#
-
-
     def run(self):
 #Väljastab info iga sekund|| niipalju kordi
 #                         \/
@@ -335,7 +346,7 @@ class MyPublisherNode(DTROS): #Klass
                 speed.vel_left = 0.0
                 self.pub.publish(speed)
             
-            if len(self.line_values) != 0 and self.theta_ref is not self.rightvalues and self.theta_ref is not self.leftvalues:
+            if len(self.line_values) != 0 and self.theta_ref is not self.rightvalues and self.theta_ref is not self.leftvalues:         #Lühikese raja läbimine
 
                 if self.errorlist in self.shortroute:
                     self.short = 1
